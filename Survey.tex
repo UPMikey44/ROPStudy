@@ -21,4 +21,46 @@
 
 \begin{document}
 \maketitle
+
+\newpage
+\section*{Introduction}
+Survey paper to get an idea of what/how/why of return oriented programming (ROP)
+Will go over some reasons why ROP was used/proposed
+How we got to ROP from classic stack smashing attacks
+Ways to mitigate ROP attacks
+Ways that ROP is changing itself for future use
+\section*{History of ROP}
+\subsection*{Stack Smashing Mitigation Work Arounds}
+Classic stack smashing attack, obligatory Aleph One reference
+Write XOR Execute OS mode $W \oplus X$
+Jump to existing code that is within libraries
+\subsection*{Return to Libc}
+Attack that Jump to Libc library to perform actions already existing in library
+After performing one library function can jump to other function to get linked execution
+\subsection*{Return Oriented Programming}
+Generalized form of Return to Libc attack that as described in DoROP
+Goal is to make a turing complete version of Return to Libc
+\section*{Description of ROP}
+SP for next instruction
+Small bits of code which end in a type of pop instruction
+Gadgets
+Gadget creation
+Put it all together in turing completeness
+\section*{Mitigation Techniques for ROP}
+There a number of mitigation tecniques from the hardware upto the software level
+\subsection*{Hardware}
+Instruction Set randomization
+\subsection*{Operating System}
+control flow graphs
+others from the papers
+\subsection*{Code Design}
+prevent buffer overflows
+\section*{Extensions of ROP}
+Automated ROP compilation
+Jump Oriented Programming (JOP)
+Use ROP/JOP form a program, say Mozilla Firefox, instead of Libc
+\section*{Conclusion}
+ROP is a robust way to attack a system
+It is not easily stoppable and is easily extensible
+It is growing even today
 \end{document}
