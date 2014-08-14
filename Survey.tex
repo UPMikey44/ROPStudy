@@ -33,6 +33,7 @@ Return to Libc is a class of attack that use stack smashing techniques to overwr
 \subsection*{Return Oriented Programming}
 From return-into-libc attacks there is the generalization of the attack termed Return Oriented Programming (ROP).  This generalized form of return-into-libc attacks is based on the idea of gadgets.  Gadgets are small pieces of code that perform an actiivty, i.e. addition, memory store, etc., and end with a return statement.  The goal of the gadgets is to create a turing complete set of activities that can then be used to perform arbriratrary execution and allow an attacker more freedom than would be provided by return-into-libc attacks.
 \section*{Description of ROP}
+The difference between ROP and a standard control flow attack is that the stack pointer is used to move from one code segment to the next as opposed to the standard instruction pointer.  In ROP the idea is to use code segments that 
 SP for next instruction
 Small bits of code which end in a type of pop instruction
 Gadgets
