@@ -33,16 +33,12 @@ Return to Libc is a class of attack that use stack smashing techniques to overwr
 \subsection*{Return Oriented Programming}
 From return-into-libc attacks there is the generalization of the attack termed Return Oriented Programming (ROP).  This generalized form of return-into-libc attacks is based on the idea of gadgets.  Gadgets are small pieces of code that perform an actiivty, i.e. addition, memory store, etc., and end with a return statement.  The goal of the gadgets is to create a turing complete set of activities that can then be used to perform arbriratrary execution and allow an attacker more freedom than would be provided by return-into-libc attacks.
 \section*{Description of ROP}
-The difference between ROP and a standard control flow attack is that the stack pointer is used to move from one code segment to the next as opposed to the standard instruction pointer.  In ROP the idea is to use code segments that 
-SP for next instruction
-Small bits of code which end in a type of pop instruction
-Gadgets
-Gadget creation
-Put it all together in turing completeness
+The difference between ROP and a standard control flow attack is that the stack pointer is used to move from one code segment to the next as opposed to the standard instruction pointer.  In ROP the idea is to use code segments that end in a ret statement
+The basis for these code segments are genearlly referred to as gadgets, and all end in return instructions (hence Return Oriented Programming).  These gadgets are generally constructed from a library, either by hand or "compiler," to provide a turning complete set of actions. For this a general principal is to construct a gadget suite of mathmatical and logical operations, set and get from memory, branch, and compare actions.  From this set an attacker can create arbrirtary code execution for a ROP attack and get more functionality than from standard return-into-libc attacks.
 \section*{Mitigation Techniques for ROP}
-There a number of mitigation tecniques from the hardware upto the software level
+There a number of mitigation tecniques from the hardware upto the software level.  This paper will take a brief look at hardware, operating system, and code design techniques that can help mitigate ROP attacks.  It will also look at the pluses and minuses of these techniques.
 \subsection*{Hardware}
-Instruction Set randomization
+At the hardware level Instruction Set Architecture (ISA) randomization would a very effective way to prevent ROP attacks.  ROP attacks rely on jumping into exact portions of a library and expecting that [ASSEMBLY CODE] will execute a given gadget.  If the ISA did not perform the same action with the same assembly code fragments then ROP attacks would become much harder.  An attacker would either need to make an attack code for each randomization of a given ISA and bombard it with a vulnerable program with each variation or an attacker would need to hope that the one version created would work.  ISA randomization would mean reworking of many levels of the computer stack and would need to be pushed across all the systems to be affective. this makes it very difficult to envision being used in the real world.
 \subsection*{Operating System}
 control flow graphs
 others from the papers
