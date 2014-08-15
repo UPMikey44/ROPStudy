@@ -1,8 +1,7 @@
 \documentclass[11pt]{amsart}
 \usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
-\geometry{letterpaper}                   % ... or a4paper or a5paper or ... 
-%\geometry{landscape}                % Activate for for rotated page geometry
-%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\geometry{letterpaper}
+\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
 \usepackage{graphicx}
 \usepackage{amssymb}
 \usepackage{epstopdf}
@@ -12,7 +11,7 @@
 
 \usepackage{fancyhdr}
 \pagestyle{fancy}
-\lhead{\footnotesize \parbox{11cm}{CIS 551 Homework No. 3 Part 3} }
+\lhead{\footnotesize \parbox{11cm}{Return Oriented Programming Survey} }
 \rhead{\footnotesize \parbox{11cm}{ } }
 
 \title{Return Oriented Programming Survey}
@@ -40,10 +39,11 @@ There a number of mitigation tecniques from the hardware upto the software level
 \subsection*{Hardware}
 At the hardware level Instruction Set Architecture (ISA) randomization would a very effective way to prevent ROP attacks.  ROP attacks rely on jumping into exact portions of a library and expecting that [ASSEMBLY CODE] will execute a given gadget.  If the ISA did not perform the same action with the same assembly code fragments then ROP attacks would become much harder.  An attacker would either need to make an attack code for each randomization of a given ISA and bombard it with a vulnerable program with each variation or an attacker would need to hope that the one version created would work.  ISA randomization would mean reworking of many levels of the computer stack and would need to be pushed across all the systems to be affective. this makes it very difficult to envision being used in the real world.
 \subsection*{Operating System}
-control flow graphs
-others from the papers
+There are many standard attack mitigation techniques that will help against ROP attacks; Control Flow Graphs that don't allow a program to act in ways that are counter to its predetermined control flow.  Shadow stacks that protect the stack pointer from being over ridden, though an attacker could "simply" smash both the normal and shadow stacks.  
+A prime ROP mitigation technique is to check, in a way, the frequency of ret instructions for a running program.  Now it is likely that in any given program there will be a section of code where there are many frequent ret instructions.  Techniques that look for this type of activity therefore set thresholds to determine if an attack is happening, the threshold looks for the average amount of instructions between ret instructions.  In this way it can be determined, to an acceptable degree, that a ROP attack has been usstained and steps can be taken.
 \subsection*{Code Design}
-prevent buffer overflows
+From the code design level the mitigation techniques deployed against other attacks can be used to prevent ROP attacks too. Simple steps such as preventing buffer overflows and memory leaks are "easy" ways to frustrate attackers.  Sanitizing input to prevent information leaks from %s attacks is a smart way to make it more difficult for attackers to accquire the information they need to start attacks, ROP or otherwise.  When using memory safe languages, i.e. Java, reduce the amount of just in time (JIT) compiled code, to again reduce the locations for attackers to maliciously enter your code.
+In terms of ROP specific design decisions to mitigate attacks a simple, if not overly effective, tactic is only include the minimum amount of packages necessary.  This will deprive ROP attackers the breadth of potential gadget options which will make creating an attack more difficult.  ROP attacks do not necessarily need to use a library but can use just the available program executable code, which we will explain in the next section.  In this regard homoginzed code and and a compiler that does not use the most esoteric ISA options will provide less chances for ROP attacks to use the density of code to their advantage.
 \section*{Extensions of ROP}
 Automated ROP compilation
 Jump Oriented Programming (JOP)
