@@ -25,7 +25,7 @@
 
 \newpage
 \section*{Introduction}
-This paper will review, in part, the history of Return Oriented Programming (ROP). It will explore some technical reasons that made ROP a viable attack methodology. This paper will also explore the foundational elements of ROP, and the ways those foundational elements are used to attack vulnerable systems. After the review of ROP we will review ROP mitigation techniques. From ISA mitigation techniques, to mitigation techniques deployed in programming languages. This paper will then take a look at some current extensions to ROP, such as Jump Oriented Programming (JOP), and look at possible ways they can be used in the future.
+This paper will review, in part, the history of Return Oriented Programming (ROP). It will explore some technical reasons that made ROP a viable attack methodology. This paper will also explore the foundational elements of ROP, and the ways those foundational elements are used to attack vulnerable systems. After the review of ROP we will review ROP mitigation techniques from the ISA level to to programming languages. This paper will then take a look at some current extensions to ROP, such as Jump Oriented Programming (JOP), and look at possible ways they can be used in the future.
 \section*{History of ROP}
 As always, to understand where we are we need to see where we have been.  This will be a brief description of how the security community came to ROP, there are fuller details but this out of scope for this paper.  This paper will start with Aleph One.
 \subsection*{Stack Smashing Mitigation Work Arounds}
@@ -33,23 +33,68 @@ From the classic stack smashing attack, obligatory Aleph One reference, of placi
 \subsection*{Code Reuse Attacks}
 Code Reuse Attacks are attacks that use code already existing in the target system to work as the payload. Return-into-libc is an example of code reuse attacks that uses the libc library as the existing code to work in. Libc is a package of standard libraries that are defined on most operating systems and is full of useful methods to attacks. Return-into-libc attacks proceed in the following fashion, an attacker takes control of the instruction flow, either by stack smashing or any other technique, and directs the program perform arbritary functions from libc. Since the code in a standard library is marked as executable from the OS if an attacker moves control of an attacked program to it it will execute. In this way an attacker could perform any library function available to the attacked program with values of their choosing. After performing one library function an attacker can then jump to an other function to perform a more complex payload.  From return-into-libc attacks we then got the generalization known as ROP.
 \section*{Description of Return Oriented Programming}
-ROP is a generalization and extended form of return-into-libc attacks. This form of code reuse attacks is based on the idea of using of small pieces of code ending in return, $ret$, instructions (hence Return Oriented Programming) termed gadgets to create attack payloads. Gadgets are small pieces of assembly code only a few instructions long that perform an action, i.e. addition, memory store, etc., and then use a $ret$ to move on. The goal of creating gadgets is to create a turing complete set of actions that can then be used to perform arbriratrary execution and allow an attacker more freedom than would be provided by return-into-libc attacks. \newline
-To create gadgets the complexity of modern ISAs is used to the attackers advantage.  Gadgets are created from $within$ existing assembly instructions by chopping them in ways that are not expected by a compiler.  In the english for example; driver watch out, could be chopped into; river watch out, if a reader started from the $2^{nd}$ letter instead of the $1^{st}$.  In this way an assembly instruction: \newline f7 c7 48 89 c7 00 \tab{test \$0x00c78948, \%edi} \newline$c3\tab{ret}$ \newline could be force by a nefarious attacker to be read as \newline48 89 c7 \tab{mov \%rax,\%rdi} \newline$00$ \newline c3 \tab{ret} \newline
-With a fine eye and limitless time these gadgets can be found by hand in a library and then their instruction locations stored on the stack by the attacker.  However there is a way to find these gadget instructions, which will parse through machine code and produce plausible gadgets that end in $ret$s.  With this the ROP attacks can be found and created by would be attackers.
+ROP is a generalization and extended form of return-into-libc attacks. This form of code reuse attacks is based on the idea of using of small pieces of code ending in return, $ret$, instructions (hence Return Oriented Programming) termed gadgets to create attack payloads. Gadgets are small pieces of assembly code only a few instructions long that perform an action, i.e. addition, memory store, etc., and then use a $ret$ to move on. The goal of creating gadgets is to create a turing complete set of actions that can then be used to perform arbriratrary execution and allow an attacker more freedom than would be provided by return-into-libc attacks. \newline \newline
+To create gadgets the complexity of modern ISAs is used to the attackers advantage.  Gadgets are created from $within$ existing assembly instructions by chopping them in ways that are not expected by a compiler.  In the english for example; driver watch out, could be chopped into; river watch out, if a reader started from the $2^{nd}$ letter instead of the $1^{st}$.  In this way an assembly instruction: \newline f7 c7 48 89 c7 00 \tab{test \$0x00c78948, \%edi} \newline$c3\tab{ret}$ \newline could be force by a nefarious attacker to be read as \newline48 89 c7 \tab{mov \%rax,\%rdi} \newline$00$ \newline c3 \tab{ret} \newline \newline
+With a fine eye and limitless time these gadgets can be found by hand in a library and then the instruction can be placed locations on the stack by the attacker.  However there is a way to find these gadget instructions, which will parse through machine code and produce plausible gadgets that end in $ret$s.  With this the ROP attacks can be found and created by would be attackers.
 \section*{Mitigation Techniques for ROP}
 There a number of mitigation tecniques from the hardware upto the software level. This paper will take a brief look at hardware, operating system, and code design techniques that can help mitigate ROP attacks. It will also look at the pluses and minuses of these techniques.
 \subsection*{Hardware}
 At the hardware level Instruction Set Architecture (ISA) randomization would a very effective way to prevent ROP attacks. ROP attacks rely on jumping into exact portions of a library and expecting that [ASSEMBLY CODE] will execute a given gadget. If the ISA did not perform the same action with the same assembly code fragments then ROP attacks would become much harder. An attacker would either need to make an attack code for each randomization of a given ISA and bombard it with a vulnerable program with each variation or an attacker would need to hope that the one version created would work. ISA randomization would mean reworking of many levels of the computer stack and would need to be pushed across all the systems to be affective. this makes it very difficult to envision being used in the real world.
 \subsection*{Operating System}
-There are many standard attack mitigation techniques that will help against ROP attacks; Control Flow Integrity enforcement that don't allow a program to act in ways that are counter to its predetermined control flow. CFI is difficult to implement for several reasons, one being overhead. Every time a branch, jump, return, etc. is used a check needs to be made, it would also need to be done for all previously created programs to have any use, making full CFI as an attack mittigation technique difficult currently. Shadow stacks that protect the stack pointer from being over ridden, though an attacker could "simply" smash both the normal and shadow stacks. \newline
+There are many standard attack mitigation techniques that will help against ROP attacks; Control Flow Integrity enforcement that don't allow a program to act in ways that are counter to its predetermined control flow. CFI is difficult to implement for several reasons, one being overhead. Every time a branch, jump, return, etc. is used a check needs to be made, it would also need to be done for all previously created programs to have any use, making full CFI as an attack mittigation technique difficult currently. Shadow stacks that protect the stack pointer from being over ridden, though an attacker could "simply" smash both the normal and shadow stacks. \newline \newline
 A prime ROP mitigation technique is to check, in a way, the frequency of ret instructions for a running program. Now it is likely that in any given program there will be a section of code where there are many frequent ret instructions. Techniques that look for this type of activity therefore set thresholds to determine if an attack is happening, the threshold looks for the average amount of instructions between ret instructions. In this way it can be determined, to an acceptable degree, that a ROP attack has been usstained and steps can be taken.
 \subsection*{Code Design}
-From the code design level the mitigation techniques deployed against other attacks can be used to prevent ROP attacks too. Simple steps such as preventing buffer overflows and memory leaks are "easy" ways to frustrate attackers. Sanitizing input to prevent information leaks from attacks is a smart way to make it more difficult for attackers to accquire the information they need to start attacks, ROP or otherwise. When using memory safe languages, i.e. Java, reduce the amount of just in time (JIT) compiled code, to again reduce the locations for attackers to maliciously enter your code.\newline
+From the code design level the mitigation techniques deployed against other attacks can be used to prevent ROP attacks too. Simple steps such as preventing buffer overflows and memory leaks are "easy" ways to frustrate attackers. Sanitizing input to prevent information leaks from attacks is a smart way to make it more difficult for attackers to accquire the information they need to start attacks, ROP or otherwise. When using memory safe languages, i.e. Java, reduce the amount of just in time (JIT) compiled code, to again reduce the locations for attackers to maliciously enter your code.\newline \newline
 In terms of ROP specific design decisions to mitigate attacks a simple, if not overly effective, tactic is only include the minimum amount of packages necessary. This will deprive ROP attackers the breadth of potential gadget options which will make creating an attack more difficult. ROP attacks do not necessarily need to use a library but can use just the available program executable code, which we will explain in the next section. In this regard homoginzed code and and a compiler that does not use the most esoteric ISA options will provide less chances for ROP attacks to use the density of code to their advantage.
 \section*{Extensions of ROP}
-ROP as a programming technique is already growing in depth and breadth. The most basic extension to ROP is to create the gadgets and a derived program in an automated manner. First an attacker could create, or accquire, a method to generate gadgets from a given executable. From this an attacker could then wirte a program in their language of choice and compile it into an attack package from the gadgets generated.\newline
-Another, obvious once someone smart figures it out first, extension is Jump Oriented Programming (JOP). This way instead of using rets and the stack pointer to move through attack code jmp instructions are used. Attacks using this method have more variety simply from the basis that there is more variety in jmp instructions; far, near, direct, and indirect. Using jmp instructions does cause an issue however, they are not as readily available in standard libraries as ret instructions and therefore it is harder to construct a turing complete set of gadgets and from there a viable JOP attack payload.\newline
+ROP as a programming technique is already growing in depth and breadth. The most basic extension to ROP is to create the gadgets and a derived program in an automated manner. First an attacker could create, or accquire, a method to generate gadgets from a given executable. From this an attacker could then wirte a program in their language of choice and compile it into an attack package from the gadgets generated.\newline \newline
+Another, obvious once someone smart figures it out first, extension is Jump Oriented Programming (JOP). This way instead of using rets and the stack pointer to move through attack code jmp instructions are used. Attacks using this method have more variety simply from the basis that there is more variety in jmp instructions; far, near, direct, and indirect. Using jmp instructions does cause an issue however, they are not as readily available in standard libraries as ret instructions and therefore it is harder to construct a turing complete set of gadgets and from there a viable JOP attack payload.\newline \newline
 A would be attacker can also use ROP but not from a standard library linked with an executable, but an executable itself. Large professional applications contain dense code sets that can be exploited in, almost, the same fashion as libc. However, these applications do not normally have the depth of standard library calls and therefore might not to use some gadgets created from libraries to be fully turing complete. This type of attack is a useful extension of ROP since it might be feasible to prevent an attacker from using a standard library in but without complete control flow graphs it would be very difficult to prevent a program from executing code within its own executable for an attack.
 \section*{Conclusion}
 ROP is a robust and elegant eveolution of the code reuse attack that is difficult to defend against. Building a turing complete set of gadgets from an executable providers attackers with a way to create arbritrary payloads.  While there are focused techniques to combat ROP attacks, the standard mitigation techniques that amount to write clean, simple and well tested code are the still best. ROP specific mitigation techniques can be side stepped by ROP extensions such as JOP, and vice-cersa for JOP mitigation techniques. As ROP within programs, as opposed to libraries, matures current mitigation techniques will be even less useful. There could even be further extensions to ROP, branch oriented program perhaps.  This will just lead to even more interesting research in the community.
+
+\begin{thebibliography}{9}
+
+\bibitem{cfi}
+  Martin Abadi, Mihai Budiu, Ulfar Erlingsson, Jay Ligatti,
+  \emph{Control-Flow Integrity: Principles, Implementations, and Applications}.
+  Addison Wesley, Massachusetts,
+  2nd edition,
+  1994.
+
+\bibitem{geometry07}
+  Hovav Shacham∗,
+  \emph{The Geometry of Innocent Flesh on the Bone: Return-into-libc without Function Calls (on the x86)}.
+  2007.
+
+\bibitem{smashing}
+  Aleph One,
+  \emph{Smashing the stack for fun and profit}.
+  Phrack Magazine, 49(14) Nov.,
+  1996.
+
+\bibitem{escaperop}
+  Stephen Checkoway, Hovav Shacham,
+  \emph{Escape From Return-Oriented Programming: Return-oriented Programming without Returns (on the x86)}.
+
+\bibitem{mitigationrop}
+  Vasilis Pappas,
+  \emph{kBouncer: Efficient and Transparent ROP Mitigation}.
+  2012.
+
+\bibitem{jop}
+  Tyler Bletsch, Xuxian Jiang, Vince Freeh,
+  \emph{Jump-Oriented Programming: A New Class of Code-Reuse Attack∗}.
+  2010.
+
+\bibitem{sokwar}
+  Laszlo Szekeres, Mathias Payer, Tao Wei∗, Dawn Song,
+  \emph{SoK: Eternal War in Memory}.
+  3010.
+
+\bibitem{overviewrop}
+  Ryan Roemer, Erik Buchanan, Hovav Shacham, Stefan Savage,
+  \emph{Return-Oriented Programming: Systems, Languages, and Applications}.
+  3010.
+\end{thebibliography}
 \end{document}
