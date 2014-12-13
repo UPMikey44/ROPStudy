@@ -9,3 +9,8 @@ Recap: Write a survey over the summer taking into account the different attack a
 Deliverables:
 JMS: Papers to Mike (myself) to read
 Mike: Github repo to share paper
+
+
+
+Email eniac guy
+Fiddle with timeline to not be the day before thanksgiving
