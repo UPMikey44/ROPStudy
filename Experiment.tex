@@ -1,0 +1,54 @@
+\documentclass[11pt]{amsart}
+\usepackage{geometry}        % See geometry.pdf to learn the layout options. There are lots.
+\geometry{letterpaper}
+\usepackage[parfill]{parskip}  % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{enumerate}
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+\setlength{\parindent}{0pt} 
+
+\newcommand{\tab}[1]{\hspace{.2\textwidth}\rlap{#1}}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\lhead{\footnotesize \parbox{11cm}{Return Oriented Programming Survey} }
+\rhead{\footnotesize \parbox{11cm}{ } }
+
+\title{Return Oriented Programming Study: \newline An Unexpected Journey}
+\author{Michael Patrick O'Connor Jr., Johnathan Michael Smith}
+\date{}
+
+\begin{document}
+\maketitle
+
+\newpage
+\section*{Introduction}
+I took this Independent Study to gain a better understanding of Return Oriented Programming (ROP) attacks. I designed tests to see the difference in creating ROP attacks versus creating standard buffer overflow attacks.  I then designed experiments to try out the attacks in different environment setups to see how real world protections affected each type of attack differently.  My goal was to gain more understanding of potential defenses to ROP attacks in creating one as well as the level of enggineering necessary to build an attack.  To me i have met these goals and will outline how and why I believe so.
+\section*{Experiment Outline}
+In my pursuit of greater ROP knowledge I setup an experiment to test the differences between standard buffer overflow attacks and ROP attacks.  To understand this I was to recreate a buffer overflow attack from CIS 551: Computer and Network Security and create an ROP attack outlined in Hovav Shacham's Geometry$^[1]$ paper.
+The next experiment was to run each attack on a system with Write XOR Execute ($W \oplus X$) protection turned off.  I would then turn $W \oplus X$ protection back on and again run each attack.  This was designed to show the extra power provided by ROP attacks since this attack should prevent standard buffer overflow attacks yet be vulnerable to ROP attacks.
+\section*{Journey through the Experiment}
+\subsection*{System Setup}
+\subsection*{Buffer Overflow Base}
+\subsection*{ROP Build}
+\section*{Summary}
+I learned as much about ROP attacks as I inteded too, as shown above, but I also learned about experiment design and execution. While I had previously learned about assumptions and setup in Elementary and Middle School science classes, I certainly got a refresher course as I went through this Independent Study. I also learned about getting a system setup in an environment that you do not control every aspect off, another useful skill as I move on in my professional life.
+I would like to thank Professor Johnathan Michael Smith for being my advisor on this Independent Study and chatting with me and encouraging me as I went about this process.
+
+\begin{thebibliography}{1}
+
+\bibitem{geometry07}
+  Hovav Shacham∗,
+  \emph{The Geometry of Innocent Flesh on the Bone: Return-into-libc without Function Calls (on the x86)}.
+  2007.
+
+\bibitem{smashing}
+  Aleph One,
+  \emph{The Inside Story on Shared Libraries and Dynamic Loading}.
+  Scientific Programming, September/October.,
+  2001.
+
+\end{thebibliography}
+\end{document}
