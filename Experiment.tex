@@ -87,12 +87,7 @@ This shell overwrite assumes that libc is at 0x03000000 and an overflowable buff
 34 ff ff 4f ad fb ca de 2f 62 69 6e 2f 73 68 00 
 \end{verbatim}
 I then tried to run this code and ran into a litany of problems beyond not having the correct libc location.  What was immediately noticeable to me though, is that the attack payload is larger here then in the original attack.  The reason being that the size of the location of the buffer in badbuf was larger than the one in the geometry paper.  I found this very intersting at the time, but there were other errors to attend to.  The largest impediment at the time was that the chracter string was not being read in.  It would always crash because of the characters in the string.  I then tried to force the attack string into the buffers in a number of ways but was unsuccessful.
-At this point I went back to the Geometry paper and noticed that they paper assumed libc was at 0x03000000 and I should verify if that was correct.  I did not know how to do this however but found it from a paper$^[2]$ in Scientific Programming.  After finding this out I discovered that libc on for badbuf was installed at 0x00007ffff7a2f000
-
-Overwrote libc memory address
-	accompanying issues
-	libc paper
-	Script
+At this point I went back to the Geometry paper and noticed that they paper assumed libc was at 0x03000000 and I should verify if that was correct.  I did not know how to do this however but found it from a paper$^[2]$ in Scientific Programming.  After finding this out I discovered that libc on for badbuf was installed at 0x00007ffff7a2f000. I then checked all the calls to libc in the Geometry attack, found the offsets and added them to the location of my libc and then produced this attack payload:
 \begin{verbatim}
 3e68 a6f7 ff7f 076f a5f7 ff7f 0b0b 0b0b 
 1ce1 ffff ff7f 306f a5f7 ff7f 4f27 a8f7 
@@ -101,7 +96,8 @@ a5f7 ff7f 30e1 ffff ff7f 34e1 ffff ff7f
 ffc7 abf7 ff7f 38e1 ffff ff7f adfb cade 
 2f62 696e 2f73 6800
 \end{verbatim}
-As you can see this attack is even longer than the previous version!  From this I found out a few things, most importantly that as the memory address space grows so do ROP style attacks will grow in physical byte size.  This will make future attacks more difficult since many overflowable fields tend to be on the smaller size, i.e. most password fields are not 128 characters long.
+I could also not get this attack to work for the same reasons as above. Frustrated I made a script in Scala that would turn the di
+However,  you can see this attack is even longer than the previous version!  From this I found out a few things, most importantly that as the memory address space grows so do ROP style attacks will grow in physical byte size.  This will make future attacks more difficult since many overflowable fields tend to be on the smaller size, i.e. most password fields are not 128 characters long.
 \subsection*{Conclusions}
 ASSUMPTIONS
 Setup
