@@ -32,10 +32,43 @@ The next experiment was to run each attack on a system with Write XOR Execute ($
 \section*{Journey through the Experiment}
 \subsection*{System Setup}
 Get a system to call my own
-While getting a system was not on my initiail outlook of potential issues, this step did take longer than anticipated.  It took about 3 weeks to work with the university to get a machine then another few days to get the system setup properly.  The setup was to turn off the ($W \oplus X$) protection and address space randomization, done by ---------------- and then trying to get the new machine behind the firewall that Professor JMS had setup.  I did not get the machine behind the firewall, but the ASR and ($W \oplus X$) were set up and I started the experiment.
-I choose to turn off ASR because this project was to learn about ROP, not to learn how to defeat ASR.  I understand that ASR can be defeated by several methods, laziest of all simple bruteforce retries with some NO-OP padding to get the cut down on the number of retries.
+While getting a system was not on my initiail outlook of potential issues, this step did take longer than anticipated.  It took about 3 weeks to work with the university to get a machine then another few days to get the system setup properly.  The setup was to turn off the ($W \oplus X$) protection, which is done with the $-fno-stack-protector$ off command at compile time, and address space layout randomization (ASLR), done by running the following command as root $echo 0 > /proc/sys/kernel/randomize_va_space$ and then trying to get the new machine behind the firewall that Professor JMS had setup.  I did not get the machine behind the firewall, but the ASLR and ($W \oplus X$) were set up and I started the experiment.
+I choose to turn off ASLR because this project was to learn about ROP, not to learn how to defeat ASLR.  I understand that ASLR can be defeated by several methods, laziest of all simple bruteforce retries with some NO-OP padding to get the cut down on the number of retries.
 \subsection*{Buffer Overflow Base}
-To create the base buffer overflow attack I used the basics from an old assignment.  I used the attackable program badbuf.c:
+To create the base buffer overflow attack I used the basics from an old assignment.  I used the attackable program badbuf.c as a vulnerable program, source is in the appendix.  This program has a simply overflowable buffer which was exploted by a standard stack smashing attack. One of the tricky aspects of the code is that the name and pw buffers still have to match to actually get a correct attack, if they dont the exit() method destorys the stack and doesn't allow control to fall to the user attack. This was my base to make sure that the ($W \oplus X$) was actually off and a way for me to get back into the swing of attacking buffers.  Once I had this working it was time to work out the ROP attack.
+\subsection*{ROP Build}
+To perform the ROP attack I took as a base the following code from Gometry$^{[1]}$.
+\begin{verbatim}
+3e 78 03 03 07 7f 02 03 0b 0b 0b 0b 18 ff ff 4f 
+30 7f 02 03 4f 37 05 03 bd ad 06 03 34 ff ff 4f 
+07 7f 02 03 2c ff ff 4f 30 ff ff 4f 55 d7 08 03
+34 ff ff 4f ad fb ca de 2f 62 69 6e 2f 73 68 00 
+\end{verbatim}
+This shell overwrite assumes that libc is at 0x03000000 and an overflowable buffer at 0x04ffffefc.  I proceeded to find out the in memory location of my overflowable buffer and then update the attack code.  This was the point where I made my first mistake, I went the libc location assumption!  This proved to be incorrect and I fixed this later, but I still was able to learn somethings from this initial exxcersise.  The overflowable buffer for my badbuf is located at 0x7ffff7a2f000, which I found from a little C program that I ran.  With this info I computed the offsets from 0x04ffffefc and added them to 0x00007fffffffe100 and created the following attack code:
+\begin{verbatim}
+3e 78 03 03 07 7f 02 03 0b 0b 0b 0b 18 ff ff 4f 
+30 7f 02 03 4f 37 05 03 bd ad 06 03 34 ff ff 4f 
+07 7f 02 03 2c ff ff 4f 30 ff ff 4f 55 d7 08 03
+34 ff ff 4f ad fb ca de 2f 62 69 6e 2f 73 68 00 
+\end{verbatim}
+I then tried to run this code and ran into a litany of problems beyond not having the correct libc location.  What was immediately noticeable to me though, is that the attack payload is larger here then in the original attack.  The reason being that the size of the location of the buffer in badbuf was larger than the one in the geometry paper.  I found this very intersting at the time, but there were other errors to attend to.  The largest impediment at the time was that the chracter string was not being read in.  It would always crash because of the characters in the string.  I then tried to force the attack string into the buffers in a number of ways but was unsuccessful.
+At this point I went back to the Geometry paper and noticed that they paper assumed libc was at 0x03000000 and I should verify if that was correct.  I did not know how to do this however but found it from a paper$^{[2]}$ in Scientific Programming.  After finding this out I discovered that libc on for badbuf was installed at 0x00007ffff7a2f000. I then checked all the calls to libc in the Geometry attack, found the offsets and added them to the location of my libc and then produced this attack payload:
+\begin{verbatim}
+3e 68 a6 f7 ff 7f 07 6f a5 f7 ff 7f 0b 0b 0b 0b 
+1c e1 ff ff ff 7f 30 6f a5 f7 ff 7f 4f 27 a8 f7 
+ff 7f bd 9d a9 f7 ff 7f 38 e1 ff ff ff 7f 70 6f 
+a5 f7 ff 7f 30 e1 ff ff ff 7f 34 e1 ff ff ff 7f 
+ff c7 ab f7 ff 7f 38 e1 ff ff ff 7f ad fb ca de 
+2f 62 69 6e 2f 73 68 00
+\end{verbatim}
+I could also not get this attack to work for the same reasons as above. To quicken any changes I would have to make, I made a script in Scala that would replace the codes in from the Geometry ROP attack with locations in that fit in the user's environment. Even from this new impasse I was able to learn more about ROP attacks.  As you can see this attack is even longer than the previous version!  From this I found out a few things, most importantly that as the memory address space grows so do ROP style attacks will grow in physical byte size.  This will make future attacks more difficult since many overflowable fields tend to be on the smaller size, i.e. most password fields are not 128 characters long.
+\subsection*{Conclusions}
+In conclusion I learned that namely, ROP attacks are an extremely sophisticated attack vector.  They have more moving parts than a standard buffer overflow attack and also need more knowledge about the vulnerable system.  While getting this information is not overly complicated, or can just be brute forced around, any additional layers of aggravation for attackers is a success for system defenders.  I also came away with a better understanding of managing assumptions.  Even the simpleset steps in the design of an experiment, or system or application or ..., should have an explanation.  This would have saved me some time in my initial mixups.  I can also take away that as memory space grows ROP styled attacks will grow in difficulty.  libc and memory locations of overflows can be in larger memory addresses which squishes the amount of $ret$ or $jump$ addresses in an attack payload.
+\section*{Summary}
+I learned as much about ROP attacks as I inteded and wanted too, as shown above.  I understand how to setup a ROP attack, the issues that make it a more difficult attack than standard buffer overflow attacks, and some of its trade-offs as an attack vector.  I also learned about experiment design and execution. While I had previously learned about assumptions and setup in Elementary and Middle School science classes, I certainly got a refresher course as I went through this Independent Study. I also learned about getting a system setup in an environment that you do not control every aspect off, another useful skill as I move on in my professional life.
+
+\section*{Code}
+badbuf.c
 \begin{verbatim}
 #include <stdio.h>
 
@@ -70,43 +103,6 @@ main(){
 }
 \end{verbatim}
 
-This program has a simply overflowable buffer which was exploted by a standard stack smashing attack. One of the tricky aspects of the code is that the name and pw buffers still have to match to actually get a correct attack, if they dont the exit() method destorys the stack and doesn't allow control to fall to the user attack. This was my base to make sure that the ($W \oplus X$) was actually off and a way for me to get back into the swing of attacking buffers.  Once I had this working it was time to work out the ROP attack.
-\subsection*{ROP Build}
-To perform the ROP attack I took as a base the following code from Gometry$^[1]$.
-\begin{verbatim}
-3e 78 03 03 07 7f 02 03 0b 0b 0b 0b 18 ff ff 4f 
-30 7f 02 03 4f 37 05 03 bd ad 06 03 34 ff ff 4f 
-07 7f 02 03 2c ff ff 4f 30 ff ff 4f 55 d7 08 03
-34 ff ff 4f ad fb ca de 2f 62 69 6e 2f 73 68 00 
-\end{verbatim}
-This shell overwrite assumes that libc is at 0x03000000 and an overflowable buffer at 0x04ffffefc.  I proceeded to find out the in memory location of my overflowable buffer and then update the attack code.  This was the point where I made my first mistake, I went the libc location assumption!  This proved to be incorrect and I fixed this later, but I still was able to learn somethings from this initial exxcersise.  The overflowable buffer for my badbuf is located at 0x7ffff7a2f000, which I found from a little C program that I ran.  With this info I computed the offsets from 0x04ffffefc and added them to 0x00007fffffffe100 and created the following attack code:
-\begin{verbatim}
-3e 78 03 03 07 7f 02 03 0b 0b 0b 0b 18 ff ff 4f 
-30 7f 02 03 4f 37 05 03 bd ad 06 03 34 ff ff 4f 
-07 7f 02 03 2c ff ff 4f 30 ff ff 4f 55 d7 08 03
-34 ff ff 4f ad fb ca de 2f 62 69 6e 2f 73 68 00 
-\end{verbatim}
-I then tried to run this code and ran into a litany of problems beyond not having the correct libc location.  What was immediately noticeable to me though, is that the attack payload is larger here then in the original attack.  The reason being that the size of the location of the buffer in badbuf was larger than the one in the geometry paper.  I found this very intersting at the time, but there were other errors to attend to.  The largest impediment at the time was that the chracter string was not being read in.  It would always crash because of the characters in the string.  I then tried to force the attack string into the buffers in a number of ways but was unsuccessful.
-At this point I went back to the Geometry paper and noticed that they paper assumed libc was at 0x03000000 and I should verify if that was correct.  I did not know how to do this however but found it from a paper$^[2]$ in Scientific Programming.  After finding this out I discovered that libc on for badbuf was installed at 0x00007ffff7a2f000. I then checked all the calls to libc in the Geometry attack, found the offsets and added them to the location of my libc and then produced this attack payload:
-\begin{verbatim}
-3e68 a6f7 ff7f 076f a5f7 ff7f 0b0b 0b0b 
-1ce1 ffff ff7f 306f a5f7 ff7f 4f27 a8f7 
-ff7f bd9d a9f7 ff7f 38e1 ffff ff7f 706f 
-a5f7 ff7f 30e1 ffff ff7f 34e1 ffff ff7f 
-ffc7 abf7 ff7f 38e1 ffff ff7f adfb cade 
-2f62 696e 2f73 6800
-\end{verbatim}
-I could also not get this attack to work for the same reasons as above. Frustrated I made a script in Scala that would turn the di
-However,  you can see this attack is even longer than the previous version!  From this I found out a few things, most importantly that as the memory address space grows so do ROP style attacks will grow in physical byte size.  This will make future attacks more difficult since many overflowable fields tend to be on the smaller size, i.e. most password fields are not 128 characters long.
-\subsection*{Conclusions}
-ASSUMPTIONS
-Setup
-Memory address size
-Script automation
-Other thoughts
-\section*{Summary}
-I learned as much about ROP attacks as I inteded too, as shown above, but I also learned about experiment design and execution. While I had previously learned about assumptions and setup in Elementary and Middle School science classes, I certainly got a refresher course as I went through this Independent Study. I also learned about getting a system setup in an environment that you do not control every aspect off, another useful skill as I move on in my professional life.
-I would like to thank Professor Johnathan Michael Smith for being my advisor on this Independent Study and chatting with me and encouraging me as I went about this process.
 
 \begin{thebibliography}{1}
 
